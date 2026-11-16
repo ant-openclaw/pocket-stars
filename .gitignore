@@ -1,0 +1,39 @@
+# Downloaded toolchains and private APK signing identity.
+/tools/*
+!/tools/build-apk.sh
+!/tools/README.md
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+
+# Generated Android/build outputs.
+/dist/
+/build/
+*.apk
+*.idsig
+*.dex
+*.class
+
+# Real tablet screenshots, local configuration and family records.
+/verification/
+/tablet-settings-rollback.json
+/backups/
+/data/
+*backup*.json
+*ledger*.json
+
+# Credentials and machine-local configuration.
+.env
+.env.*
+*.log
+
+# Python/editor caches.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+.idea/
+.vscode/

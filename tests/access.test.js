@@ -1,0 +1,45 @@
+"use strict";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const PS = require("../web/core.js");
+test("Child correction cannot remove fines, another child’s entry, or settled chores", () => {
+  const l = new PS.Ledger();
+  const j = l.credit("jake", "tidy-room");
+  const r = l.credit("rosie", "tidy-room");
+  l.authorize();
+  const f = l.fine("jake", 25);
+  l.lock();
+  assert.throws(() => l.removeChore("jake", f.id), /parent.*pin/i);
+  assert.throws(() => l.voidEntry(f.id), /parent/i);
+  assert.throws(() => l.removeChore("jake", r.id), /belong/i);
+  l.authorize();
+  l.settle("jake");
+  l.lock();
+  assert.throws(() => l.removeChore("jake", j.id), /settled/i);
+  assert.equal(l.view("rosie").balancePence, 50);
+});
+test("A failed child correction save leaves the original credit intact", () => {
+  let fail = false;
+  const l = new PS.Ledger(undefined, { persist: () => !fail });
+  const e = l.credit("jake", "tidy-room");
+  fail = true;
+  assert.throws(() => l.removeChore("jake", e.id), /storage/i);
+  assert.equal(l.view("jake").balancePence, 50);
+  assert.equal(l.view("jake").entries[0].voidedAt, null);
+});
+test("Upgrade to repeatable chores preserves existing amounts, history and settlements", () => {
+  const l = new PS.Ledger();
+  l.credit("jake", "tidy-room");
+  l.authorize();
+  l.fine("jake", 25);
+  l.settle("jake");
+  const old = l.data;
+  old.chores.forEach((t) => (t.dailyLimit = 1));
+  const next = new PS.Ledger(old);
+  assert.deepEqual(next.data.entries, old.entries);
+  assert.deepEqual(next.data.settlements, old.settlements);
+  assert.equal(next.view("jake").balancePence, 0);
+  next.credit("jake", "tidy-room");
+  next.credit("jake", "tidy-room");
+  assert.equal(next.view("jake").balancePence, 100);
+});
